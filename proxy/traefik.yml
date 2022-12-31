@@ -1,0 +1,30 @@
+global:
+  checkNewVersion: true
+  sendAnonymousUsage: false
+log:
+  level: ERROR
+entryPoints:
+  web:
+    address: ":80"
+    # http: - Optional: Enabling this option will allow Traefik to redirect all HTTP traffic to HTTPS.
+    #  redirections:
+    #    entryPoint:
+    #      to: websecure
+    #      scheme: https
+  websecure:
+    address: ":443"
+
+providers:
+  docker:
+    exposedByDefault: false
+
+certificatesResolvers:
+  leresolver:
+    acme:
+      dnsChallenge:
+        provider: cloudflare # For more providers, see https://doc.traefik.io/traefik/https/acme/#providers
+        resolvers:
+          - "1.1.1.1:53"
+          - "1.0.0.1:53"
+      email: EMAIL # Replace with your email
+      storage: /letsencrypt/acme.json

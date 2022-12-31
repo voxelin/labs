@@ -1,0 +1,55 @@
+version: "3.3"
+services:
+# ------------------------- #
+  proxy: # Traefik is a reverse proxy.
+    extends:
+      file: proxy/docker-compose.yml
+      service: proxy
+# ------------------------- #
+
+
+# ------------------------- #
+  portrainer: # Portainer is a web interface for docker.
+    image: portainer/portainer-ee:latest
+    container_name: portainer
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - portainer_data:/data
+    restart: unless-stopped
+    labels:
+      traefik.enable: true
+      traefik.http.routers.frontend.rule: Host(`your.domain.org`)
+      traefik.http.routers.frontend.entrypoints: websecure
+      traefik.http.services.frontend.loadbalancer.server.port: 9000
+      traefik.http.routers.frontend.service: frontend
+      traefik.http.routers.frontend.tls.certresolver: leresolver
+    depends_on:
+      - proxy
+# ------------------------- #
+
+
+# ------------------------- #
+  static: # This is reservation page.
+    image: nginx:latest
+    container_name: static
+    volumes:
+      - ./static:/usr/share/nginx/html
+    restart: unless-stopped
+    labels:
+      traefik.enable: true
+      traefik.http.routers.static.rule: HostRegexp(`{host:.+}`) # Listen to every connected domain.
+      traefik.http.routers.static.entrypoints: websecure
+      traefik.http.services.static.loadbalancer.server.port: 80
+      traefik.http.routers.static.service: static
+      traefik.http.routers.static.tls.certresolver: leresolver
+    depends_on:
+      - proxy
+# ------------------------- #
+
+
+volumes:
+  portainer_data:
+networks:
+  default:
+    name: connector
+    external: true
